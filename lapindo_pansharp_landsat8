@@ -14,13 +14,13 @@ var maskL8 = function(image) {
 
 // HSV-based Pan-Sharpening of Landsat 8 TOA images
 var panSharpenL8 = function(image) {
-  var rgb = image.select('B4', 'B3', 'B2');
-  var pan = image.select('B8');
+  var rgb = image.select('B4', 'B3', 'B2'); // RGB bands
+  var pan = image.select('B8'); // Panchromatic band
   // Convert to HSV, swap in the pan band, and convert back to RGB
   var huesat = rgb.rgbToHsv().select('hue', 'saturation');
-  var upres = ee.Image.cat(huesat, pan).hsvToRgb();
-  // Replace original RGB bands with pansharpened bands
-  return image.addBands(upres.rename(['B4', 'B3', 'B2']), null, true);
+  var pansharpenedRgb = ee.Image.cat(huesat, pan).hsvToRgb();
+  // Replace the original RGB bands with the pansharpened ones
+  return image.addBands(pansharpenedRgb.rename(['B4_ps', 'B3_ps', 'B2_ps']), null, true);
 };
 
 // Function to filter, process, and create pansharpened mosaics for a given year
@@ -36,28 +36,28 @@ function getMosaic(year) {
     .map(maskL8)
     .map(panSharpenL8); // Apply cloud masking and pansharpening
 
-  // Create a mosaic using only the pansharpened bands
+  // Create a mosaic using pansharpened bands
   var mosaic = landsatCollection.median().clip(rectangle);
 
   return mosaic;
 }
 
 // Years to process
-var years = [2020, 2021, 2022, 2023];
+var years = [2020, 2021, 2022, 2023, 2024];
 
 // Iterate over each year, process, and display
 years.forEach(function(year) {
   var mosaic = getMosaic(year);
 
-  // Add the pansharpened mosaic to the map with a title for the year
-  Map.addLayer(mosaic, {bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3, gamma: 1.4}, 'Pansharpened Mosaic ' + year);
+  // Add the pansharpened mosaic to the map with natural color visualization
+  Map.addLayer(mosaic, {bands: ['B4_ps', 'B3_ps', 'B2_ps'], min: 0.02, max: 0.25, gamma: 1.2}, 'Pansharpened Natural Mosaic ' + year);
 
   // Export the pansharpened image to Google Drive
   Export.image.toDrive({
-    image: mosaic.visualize({bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3, gamma: 1.4}),
-    description: 'Pansharpened_Landsat8_Mosaic_' + year,
+    image: mosaic.visualize({bands: ['B4_ps', 'B3_ps', 'B2_ps'], min: 0.02, max: 0.25, gamma: 1.2}),
+    description: 'Natural_Pansharpened_Landsat8_Mosaic_' + year,
     folder: 'Lapindo',
-    fileNamePrefix: 'Pansharpened_Landsat8_Mosaic_' + year,
+    fileNamePrefix: 'Natural_Pansharpened_Landsat8_Mosaic_' + year,
     region: rectangle,
     scale: 15, // Higher resolution for pansharpened
     crs: 'EPSG:4326'
