@@ -33,9 +33,9 @@ years.forEach(function(year) {
 
   // Export the image to Google Drive
   Export.image.toDrive({
-    image: mosaic,
+    image: mosaic.visualize({bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3}),
     description: 'Landsat8_Mosaic_' + year,
-    folder: 'EarthEngine',
+    folder: 'Lapindo',
     fileNamePrefix: 'Landsat8_Mosaic_' + year,
     region: rectangle,
     scale: 30,
