@@ -1,6 +1,6 @@
 # **Pansharpened Landsat 8 Mosaic**
 
-This script processes Landsat 8 satellite images to create pansharpened mosaics for a specific region and time period. It utilizes **Google Earth Engine (GEE)** functionalities to filter, mask, and enhance satellite images for visualization and export.
+This script processes Landsat 8 satellite images to create pansharpened mosaics for a specific region and time period. It utilizes **Google Earth Engine (GEE)** functionalities to filter, mask, and enhance satellite images for visualization and export. The script is designed to maintain natural colors for visualization and analysis.
 
 ## **Features**
 
@@ -10,6 +10,7 @@ This script processes Landsat 8 satellite images to create pansharpened mosaics 
   - Applies a cloud mask using the `QA_PIXEL` band to ensure minimal cloud cover.
 - **Pan-Sharpening:**
   - Enhances RGB bands using the panchromatic band via HSV transformation.
+  - Maintains natural color appearance (e.g., vegetation appears green).
 - **Annual Mosaic Generation:**
   - Creates annual mosaics for a list of specified years.
 - **Export Functionality:**
@@ -17,9 +18,9 @@ This script processes Landsat 8 satellite images to create pansharpened mosaics 
 
 ## **Study Case**
 
-**Lumpur Lapindo** refers to the devastating mudflow disaster that began in May 2006 in **Sidoarjo, Indonesia**. Caused by a combination of drilling activities and geological factors, the mudflow has displaced thousands of residents and created an ongoing environmental and social crisis. 
+**Lumpur Lapindo** refers to the devastating mudflow disaster that began in May 2006 in **Sidoarjo, Indonesia**. Caused by a combination of drilling activities and geological factors, the mudflow has displaced thousands of residents and created an ongoing environmental and social crisis.
 
-In this code, I use the Lumpur Lapindo study case in Sidoarjo, Indonesia, from **2020 to 2023** and download each year's imagery.
+In this code, the Lumpur Lapindo study case in Sidoarjo, Indonesia, is analyzed from **2020 to 2024**, with annual pansharpened mosaics generated for each year.
 
 ## **Script Overview**
 
@@ -47,8 +48,8 @@ var panSharpenL8 = function(image) {
   var rgb = image.select('B4', 'B3', 'B2');
   var pan = image.select('B8');
   var huesat = rgb.rgbToHsv().select('hue', 'saturation');
-  var upres = ee.Image.cat(huesat, pan).hsvToRgb();
-  return image.addBands(upres.rename(['B4', 'B3', 'B2']), null, true);
+  var pansharpenedRgb = ee.Image.cat(huesat, pan).hsvToRgb();
+  return image.addBands(pansharpenedRgb.rename(['B4_ps', 'B3_ps', 'B2_ps']), null, true);
 };
 ```
 
@@ -74,16 +75,16 @@ function getMosaic(year) {
 ### **5. Visualization and Export**
 Processes multiple years, visualizes the results on the map, and exports them to Google Drive:
 ```javascript
-var years = [2020, 2021, 2022, 2023];
+var years = [2020, 2021, 2022, 2023, 2024];
 years.forEach(function(year) {
   var mosaic = getMosaic(year);
-  Map.addLayer(mosaic, {bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3, gamma: 1.4}, 'Pansharpened Mosaic ' + year);
+  Map.addLayer(mosaic, {bands: ['B4_ps', 'B3_ps', 'B2_ps'], min: 0.02, max: 0.25, gamma: 1.2}, 'Pansharpened Natural Mosaic ' + year);
 
   Export.image.toDrive({
-    image: mosaic.visualize({bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3, gamma: 1.4}),
-    description: 'Pansharpened_Landsat8_Mosaic_' + year,
+    image: mosaic.visualize({bands: ['B4_ps', 'B3_ps', 'B2_ps'], min: 0.02, max: 0.25, gamma: 1.2}),
+    description: 'Natural_Pansharpened_Landsat8_Mosaic_' + year,
     folder: 'Lapindo',
-    fileNamePrefix: 'Pansharpened_Landsat8_Mosaic_' + year,
+    fileNamePrefix: 'Natural_Pansharpened_Landsat8_Mosaic_' + year,
     region: rectangle,
     scale: 15,
     crs: 'EPSG:4326'
