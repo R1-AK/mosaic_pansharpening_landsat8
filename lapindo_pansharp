@@ -19,7 +19,8 @@ var panSharpenL8 = function(image) {
   // Convert to HSV, swap in the pan band, and convert back to RGB
   var huesat = rgb.rgbToHsv().select('hue', 'saturation');
   var upres = ee.Image.cat(huesat, pan).hsvToRgb();
-  return image.addBands(upres.rename(['B4', 'B3', 'B2']));
+  // Replace original RGB bands with pansharpened bands
+  return image.addBands(upres.rename(['B4', 'B3', 'B2']), null, true);
 };
 
 // Function to filter, process, and create pansharpened mosaics for a given year
@@ -35,7 +36,7 @@ function getMosaic(year) {
     .map(maskL8)
     .map(panSharpenL8); // Apply cloud masking and pansharpening
 
-  // Create a mosaic
+  // Create a mosaic using only the pansharpened bands
   var mosaic = landsatCollection.median().clip(rectangle);
 
   return mosaic;
