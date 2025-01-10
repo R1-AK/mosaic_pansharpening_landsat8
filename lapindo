@@ -1,0 +1,50 @@
+// Define the center point
+var center = ee.Geometry.Point([112.7059683, -7.5244837]);
+
+// Create a 3 km x 3 km rectangle around the center point
+var rectangle = center.buffer(3000).bounds();
+
+// Function to filter, process, and create mosaics for a given year
+function getMosaic(year) {
+  var startDate = ee.Date.fromYMD(year, 1, 1);
+  var endDate = ee.Date.fromYMD(year, 12, 31);
+
+  // Filter Landsat 8 Collection for the specified year and region
+  var landsatCollection = ee.ImageCollection('LANDSAT/LC08/C02/T1_TOA')
+    .filterBounds(rectangle)
+    .filterDate(startDate, endDate)
+    .filter(ee.Filter.lt('CLOUD_COVER', 20)); // Filter for low cloud cover
+
+  // Create a mosaic
+  var mosaic = landsatCollection.median().clip(rectangle);
+
+  return mosaic;
+}
+
+// Years to process
+var years = [2020, 2021, 2022, 2023];
+
+// Iterate over each year, process, and display
+years.forEach(function(year) {
+  var mosaic = getMosaic(year);
+
+  // Add the mosaic to the map with a title for the year
+  Map.addLayer(mosaic, {bands: ['B4', 'B3', 'B2'], min: 0, max: 0.3}, 'Mosaic ' + year);
+
+  // Export the image to Google Drive
+  Export.image.toDrive({
+    image: mosaic,
+    description: 'Landsat8_Mosaic_' + year,
+    folder: 'EarthEngine',
+    fileNamePrefix: 'Landsat8_Mosaic_' + year,
+    region: rectangle,
+    scale: 30,
+    crs: 'EPSG:4326'
+  });
+});
+
+// Center the map on the rectangle
+Map.centerObject(rectangle, 13);
+
+// Add the rectangle to the map
+Map.addLayer(rectangle, {color: 'red'}, 'Rectangle');
