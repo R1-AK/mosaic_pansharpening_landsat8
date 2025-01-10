@@ -1,4 +1,4 @@
-# **Pansharpened Landsat 8 Mosaic Generator**
+# **Pansharpened Landsat 8 Mosaic**
 
 This script processes Landsat 8 satellite images to create pansharpened mosaics for a specific region and time period. It utilizes **Google Earth Engine (GEE)** functionalities to filter, mask, and enhance satellite images for visualization and export.
 
